@@ -27,7 +27,8 @@ import ballerina/oauth2;
 # Check HTTP response and return XML payload if succesful, else set errors and return Error.
 # + httpResponse - HTTP response or error occurred
 # + return - XML response if successful else Error occured
-isolated function checkXmlPayloadAndSetErrors(http:Response|http:PayloadType|error httpResponse) returns @tainted xml|Error {
+isolated function checkXmlPayloadAndSetErrors(http:Response|http:PayloadType|error httpResponse) returns @tainted xml|
+Error {
     if (httpResponse is http:Response) {
 
         if (httpResponse.statusCode == http:STATUS_OK || httpResponse.statusCode == http:STATUS_CREATED || httpResponse.
@@ -54,7 +55,8 @@ isolated function checkXmlPayloadAndSetErrors(http:Response|http:PayloadType|err
 # Check HTTP response and return Text payload if succesful, else set errors and return Error.
 # + httpResponse - HTTP response or error occurred
 # + return - Text response if successful else Error occured
-isolated function checkTextPayloadAndSetErrors(http:Response|http:PayloadType|error httpResponse) returns @tainted string|Error {
+isolated function checkTextPayloadAndSetErrors(http:Response|http:PayloadType|error httpResponse) returns @tainted string|
+Error {
     if (httpResponse is http:Response) {
 
         if (httpResponse.statusCode == http:STATUS_OK || httpResponse.statusCode == http:STATUS_CREATED || httpResponse.
@@ -81,7 +83,8 @@ isolated function checkTextPayloadAndSetErrors(http:Response|http:PayloadType|er
 # Check HTTP response and return JSON payload if succesful, else set errors and return Error.
 # + httpResponse - HTTP response or error occurred
 # + return - JSON response if successful else Error occured
-isolated function checkJsonPayloadAndSetErrors(http:Response|http:PayloadType|error httpResponse) returns @tainted json|Error {
+isolated function checkJsonPayloadAndSetErrors(http:Response|http:PayloadType|error httpResponse) returns @tainted json|
+Error {
     if (httpResponse is http:Response) {
         if (httpResponse.statusCode == http:STATUS_OK || httpResponse.statusCode == http:STATUS_CREATED || httpResponse.
         statusCode == http:STATUS_NO_CONTENT) {
@@ -106,7 +109,8 @@ isolated function checkJsonPayloadAndSetErrors(http:Response|http:PayloadType|er
 #
 # + httpResponse - HTTP response or error occurred
 # + return - Query string response if successful or else an sfdc:Error
-isolated function getQueryRequest(http:Response|http:PayloadType|error httpResponse, JOBTYPE jobtype) returns @tainted string|Error {
+isolated function getQueryRequest(http:Response|http:PayloadType|error httpResponse, JOBTYPE jobtype) returns @tainted string|
+Error {
     if (httpResponse is http:Response) {
         if (httpResponse.statusCode == http:STATUS_OK) {
             string|error textResponse = httpResponse.getTextPayload();
@@ -215,7 +219,7 @@ isolated function getBooleanValue(string value) returns boolean {
 
 # Logs, prepares, and returns the `ClientAuthError`.
 #
-# + message -The error message.
+# + message - The error message.
 # + err - The `error` instance.
 # + return - Returns the prepared `ClientAuthError` instance.
 isolated function prepareClientAuthError(string message, error? err = ()) returns http:ClientAuthError {
@@ -242,10 +246,10 @@ isolated function createResponseHeaderMap(http:Response resp) returns @tainted m
                 if (payload is json) {
                     json|error receivedExceptionCode = payload.exceptionCode;
                     if (receivedExceptionCode is json) {
-                         if (receivedExceptionCode.toString() == INVALID_SESSION_ID) {
+                        if (receivedExceptionCode.toString() == INVALID_SESSION_ID) {
                             headerMap[STATUS_CODE] = http:STATUS_UNAUTHORIZED;
                         }
-                    } else{
+                    } else {
                         log:printError("Invalid Exception Code", 'error = receivedExceptionCode);
                     }
                 } else {
@@ -281,7 +285,7 @@ isolated function createResponseHeaderMap(http:Response resp) returns @tainted m
 }
 
 # Convert ReadableByteChannel to string.
-# 
+#
 # + rbc - ReadableByteChannel
 # + return - converted string
 isolated function convertToString(io:ReadableByteChannel rbc) returns @tainted string|Error {
@@ -311,7 +315,7 @@ isolated function convertToString(io:ReadableByteChannel rbc) returns @tainted s
 }
 
 # Convert ReadableByteChannel to json.
-# 
+#
 # + rbc - ReadableByteChannel
 # + return - converted json
 isolated function convertToJson(io:ReadableByteChannel rbc) returns @tainted json|Error {
@@ -335,7 +339,7 @@ isolated function convertToJson(io:ReadableByteChannel rbc) returns @tainted jso
 }
 
 # Convert ReadableByteChannel to xml.
-# 
+#
 # + rbc - ReadableByteChannel
 # + return - converted xml
 isolated function convertToXml(io:ReadableByteChannel rbc) returns @tainted xml|Error {
@@ -358,9 +362,11 @@ isolated function convertToXml(io:ReadableByteChannel rbc) returns @tainted xml|
     }
 }
 
-isolated function getJsonQueryResult(json resultlist, string path, http:Client httpClient, oauth2:ClientOAuth2Provider authProvider) returns @tainted json|Error {
+isolated function getJsonQueryResult(json resultlist, string path, http:Client httpClient, 
+                                     http:OAuth2RefreshTokenGrantConfig|http:BearerTokenConfig clientConfig) returns @tainted json|
+Error {
     json[] finalResults = [];
-    var headerMap = getBulkAPIHeaders(authProvider, TEXT_CSV);
+    var headerMap = getBulkAPIHeaders(clientConfig, TEXT_CSV);
     if (headerMap is map<string>) {
         //result list is always a json[]
         if (resultlist is json[]) {
@@ -382,9 +388,11 @@ isolated function getJsonQueryResult(json resultlist, string path, http:Client h
 
 }
 
-isolated function getXmlQueryResult(xml resultlist, string path, http:Client httpClient, oauth2:ClientOAuth2Provider authProvider) returns @tainted xml|Error {
+isolated function getXmlQueryResult(xml resultlist, string path, http:Client httpClient, 
+                                    http:OAuth2RefreshTokenGrantConfig|http:BearerTokenConfig clientConfig) returns @tainted xml|
+Error {
     xml finalResults = xml `<queryResult xmlns="http://www.force.com/2009/06/asyncapi/dataload"/>`;
-    var headerMap = getBulkAPIHeaders(authProvider, TEXT_CSV);
+    var headerMap = getBulkAPIHeaders(clientConfig, TEXT_CSV);
     if (headerMap is map<string>) {
         foreach var item in resultlist/<*> {
             string resultId = (item/*).toString();
@@ -398,9 +406,11 @@ isolated function getXmlQueryResult(xml resultlist, string path, http:Client htt
     }
 }
 
-isolated function getCsvQueryResult(xml resultlist, string path, http:Client httpClient, oauth2:ClientOAuth2Provider authProvider) returns @tainted string|Error {
+isolated function getCsvQueryResult(xml resultlist, string path, http:Client httpClient, 
+                                    http:OAuth2RefreshTokenGrantConfig|http:BearerTokenConfig clientConfig) returns @tainted string|
+Error {
     string finalResults = "";
-    var headerMap = getBulkAPIHeaders(authProvider, TEXT_CSV);
+    var headerMap = getBulkAPIHeaders(clientConfig, TEXT_CSV);
     if (headerMap is map<string>) {
         int i = 0;
         foreach var item in resultlist/<*> {
@@ -445,23 +455,27 @@ isolated function mergeCsv(string list1, string list2) returns string {
     return finalList;
 }
 
-isolated function getBulkAPIHeaders(oauth2:ClientOAuth2Provider authProvider, string? contentType = ())returns map<string>|http:ClientAuthError{
+isolated function getBulkAPIHeaders(http:OAuth2RefreshTokenGrantConfig|http:BearerTokenConfig clientConfig, 
+                                    string? contentType = ()) returns map<string>|http:ClientAuthError {
+    string|oauth2:Error token;
     map<string> headerMap;
-    string|oauth2:Error token = authProvider.generateToken();
-    if (token is string){
-        if (contentType != ()){
-            headerMap =  {
-                [X_SFDC_SESSION]: token,
-                [CONTENT_TYPE] : <string> contentType
+    if (clientConfig is http:OAuth2RefreshTokenGrantConfig) {
+        oauth2:ClientOAuth2Provider authProvider = new (clientConfig);
+        token = authProvider.generateToken();
+    } else {
+        token = clientConfig.token;
+    }
+    if (token is string) {
+        if (contentType != ()) {
+            headerMap = {
+                [X_SFDC_SESSION] : token,
+                [CONTENT_TYPE] : <string>contentType
             };
         } else {
-            headerMap =  {
-                [X_SFDC_SESSION]: token
-            };
+            headerMap = {[X_SFDC_SESSION] : token};
         }
-        return headerMap; 
-    }
-    else {
+        return headerMap;
+    } else {
         return prepareClientAuthError("Failed to enrich request with OAuth2 token.", token);
     }
 }
