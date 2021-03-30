@@ -97,19 +97,13 @@ public client class Client {
         http:Request req = new;
         string path = prepareUrl([API_BASE_PATH, SOBJECTS, sObjectName]);
         req.setJsonPayload(recordPayload);
-
         var response = self.salesforceClient->post(path, req);
-
-        json|Error result = checkAndSetErrors(response);
-        if (result is json) {
-            json|error resultId = result.id;
-            if (resultId is json) {
-                return resultId.toString();
-            } else {
-                return error Error(resultId.message());
-            }
+        json result = check checkAndSetErrors(response);
+        json|error resultId = result.id;
+        if (resultId is json) {
+            return resultId.toString();
         } else {
-            return result;
+            return error Error(resultId.message());
         }
     }
 
@@ -123,16 +117,9 @@ public client class Client {
         http:Request req = new;
         string path = prepareUrl([API_BASE_PATH, SOBJECTS, sObjectName, id]);
         req.setJsonPayload(recordPayload);
-
         var response = self.salesforceClient->patch(path, req);
-
-        json|Error result = checkAndSetErrors(response, false);
-
-        if (result is json) {
-            return true;
-        } else {
-            return result;
-        }
+        json result = check checkAndSetErrors(response, false);
+        return true;
     }
 
     # Delete existing records based on relevant object id.
@@ -142,14 +129,8 @@ public client class Client {
     isolated remote function deleteRecord(string sObjectName, string id) returns @tainted boolean|Error {
         string path = prepareUrl([API_BASE_PATH, SOBJECTS, sObjectName, id]);
         var response = self.salesforceClient->delete(path, ());
-
-        json|Error result = checkAndSetErrors(response, false);
-
-        if (result is json) {
-            return true;
-        } else {
-            return result;
-        }
+        json result = check checkAndSetErrors(response, false);
+        return true;
     }
 
     # Get an object record by Id.
@@ -439,22 +420,14 @@ public client class Client {
         var headerMap = getBulkAPIHeaders(self.clientConfig);
         if (headerMap is map<string>) {
             var response = self.salesforceClient->post(path, jobPayload, headers = headerMap);
-            json|Error jobResponse = checkJsonPayloadAndSetErrors(response);
-            if (jobResponse is json) {
-                json|error jobResponseId = jobResponse.id;
-                if (jobResponseId is json) {
-                    BulkJob bulkJob = {
-                        jobId: jobResponseId.toString(),
-                        jobDataType: contentType,
-                        operation: operation
-                    };
-                    return bulkJob;
-                } else {
-                    return jobResponseId;
-                }
-            } else {
-                return jobResponse;
-            }
+            json jobResponse = check checkJsonPayloadAndSetErrors(response);
+            json jobResponseId = check jobResponse.id;
+            BulkJob bulkJob = {
+                jobId: jobResponseId.toString(),
+                jobDataType: contentType,
+                operation: operation
+            };
+            return bulkJob;   
         } else {
             return headerMap;
         }
@@ -473,21 +446,13 @@ public client class Client {
         if (headerMap is map<string>) {
             var response = self.salesforceClient->get(path, headerMap);
             if (JSON == jobDataType) {
-                json|Error jobResponse = checkJsonPayloadAndSetErrors(response);
-                if (jobResponse is json) {
-                    JobInfo jobInfo = check jobResponse.cloneWithType(JobInfo);
-                    return jobInfo;
-                } else {
-                    return jobResponse;
-                }
+                json jobResponse = check checkJsonPayloadAndSetErrors(response);
+                JobInfo jobInfo = check jobResponse.cloneWithType(JobInfo);
+                return jobInfo;
             } else {
-                xml|Error jobResponse = checkXmlPayloadAndSetErrors(response);
-                if (jobResponse is xml) {
-                    JobInfo jobInfo = check createJobRecordFromXml(jobResponse);
-                    return jobInfo;
-                } else {
-                    return jobResponse;
-                }
+                xml jobResponse = check checkXmlPayloadAndSetErrors(response);
+                JobInfo jobInfo = check createJobRecordFromXml(jobResponse);
+                return jobInfo;
             }
         } else {
             return headerMap;
@@ -504,17 +469,12 @@ public client class Client {
         var headerMap = getBulkAPIHeaders(self.clientConfig);
         if (headerMap is map<string>) {
             var response = self.salesforceClient->post(path, JSON_STATE_CLOSED_PAYLOAD, headers = headerMap);
-            json|Error jobResponse = checkJsonPayloadAndSetErrors(response);
-            if (jobResponse is json) {
-                JobInfo jobInfo = check jobResponse.cloneWithType(JobInfo);
-                return jobInfo;
-            } else {
-                return jobResponse;
-            }
+            json jobResponse = check checkJsonPayloadAndSetErrors(response);
+            JobInfo jobInfo = check jobResponse.cloneWithType(JobInfo);
+            return jobInfo;
         } else {
             return headerMap;
         }
-
     }
 
     # Abort a job.
@@ -546,79 +506,67 @@ public client class Client {
     isolated remote function addBatch(BulkJob bulkJob, json|string|xml|io:ReadableByteChannel content) returns @tainted error|
     BatchInfo {
         string path = prepareUrl([SERVICES, ASYNC, BULK_API_VERSION, JOB, bulkJob.jobId, BATCH]);
-        // https://github.com/ballerina-platform/ballerina-lang/issues/26798
         string|json|xml payload;
-        if (bulkJob.jobDataType == JSON) {
-            if (content is io:ReadableByteChannel) {
-                if (QUERY == bulkJob.operation) {
-                    payload = check convertToString(content);
+        match bulkJob.jobDataType {
+            JSON => {
+                if (content is io:ReadableByteChannel) {
+                    if (QUERY == bulkJob.operation) {
+                        payload = check convertToString(content);
+                    } else {
+                        payload = check convertToJson(content);
+                    }
                 } else {
-                    payload = check convertToJson(content);
+                    payload = content;
                 }
-            } else {
-                payload = content;
-            }
-            var headerMap = getBulkAPIHeaders(self.clientConfig, APP_JSON);
-            if (headerMap is map<string>) {
-                var response = self.salesforceClient->post(path, payload, headers = headerMap);
-                json|Error batchResponse = checkJsonPayloadAndSetErrors(response);
-                if (batchResponse is json) {
+                var headerMap = getBulkAPIHeaders(self.clientConfig, APP_JSON);
+                if (headerMap is map<string>) {
+                    var response = self.salesforceClient->post(path, payload, headers = headerMap);
+                    json batchResponse = check checkJsonPayloadAndSetErrors(response);
                     BatchInfo binfo = check batchResponse.cloneWithType(BatchInfo);
                     return binfo;
                 } else {
-                    return batchResponse;
+                    return headerMap;
                 }
-            } else {
-                return headerMap;
             }
-
-        } else if (bulkJob.jobDataType == XML) {
-            if (content is io:ReadableByteChannel) {
-                if (QUERY == bulkJob.operation) {
+            XML => {
+                if (content is io:ReadableByteChannel) {
+                    if (QUERY == bulkJob.operation) {
+                        payload = check convertToString(content);
+                    } else {
+                        payload = check convertToXml(content);
+                    }
+                } else {
+                    payload = content;
+                }
+                var headerMap = getBulkAPIHeaders(self.clientConfig, APP_XML);
+                if (headerMap is map<string>) {
+                    var response = self.salesforceClient->post(path, payload, headers = headerMap);
+                    xml batchResponse = check checkXmlPayloadAndSetErrors(response);
+                    BatchInfo binfo = check createBatchRecordFromXml(batchResponse);
+                    return binfo;
+                } else {
+                    return headerMap;
+                }
+            }
+            CSV => {
+                if (content is io:ReadableByteChannel) {
                     payload = check convertToString(content);
                 } else {
-                    payload = check convertToXml(content);
+                    payload = content;
                 }
-            } else {
-                payload = content;
-            }
-            var headerMap = getBulkAPIHeaders(self.clientConfig, APP_XML);
-            if (headerMap is map<string>) {
-                var response = self.salesforceClient->post(path, payload, headers = headerMap);
-                xml|Error batchResponse = checkXmlPayloadAndSetErrors(response);
-                if (batchResponse is xml) {
+                var headerMap = getBulkAPIHeaders(self.clientConfig, TEXT_CSV);
+                if (headerMap is map<string>) {
+                    var response = self.salesforceClient->post(path, payload, headers = headerMap);
+                    xml batchResponse = check checkXmlPayloadAndSetErrors(response);
                     BatchInfo binfo = check createBatchRecordFromXml(batchResponse);
                     return binfo;
                 } else {
-                    return batchResponse;
+                    return headerMap;
                 }
-            } else {
-                return headerMap;
             }
-
-        } else if (bulkJob.jobDataType == CSV) {
-
-            if (content is io:ReadableByteChannel) {
-                payload = check convertToString(content);
-            } else {
-                payload = content;
+            _ => {
+                return error("Invalid Job Type!");
             }
-            var headerMap = getBulkAPIHeaders(self.clientConfig, TEXT_CSV);
-            if (headerMap is map<string>) {
-                var response = self.salesforceClient->post(path, payload, headers = headerMap);
-                xml|Error batchResponse = checkXmlPayloadAndSetErrors(response);
-                if (batchResponse is xml) {
-                    BatchInfo binfo = check createBatchRecordFromXml(batchResponse);
-                    return binfo;
-                } else {
-                    return batchResponse;
-                }
-            } else {
-                return headerMap;
-            }
-
-        } else {
-            return error("Invalid Job Type!");
         }
 
     }
@@ -633,21 +581,13 @@ public client class Client {
         if (headerMap is map<string>) {
             var response = self.salesforceClient->get(path, headerMap);
             if (JSON == bulkJob.jobDataType) {
-                json|Error batchResponse = checkJsonPayloadAndSetErrors(response);
-                if (batchResponse is json) {
-                    BatchInfo binfo = check batchResponse.cloneWithType(BatchInfo);
-                    return binfo;
-                } else {
-                    return batchResponse;
-                }
+                json batchResponse = check checkJsonPayloadAndSetErrors(response);
+                BatchInfo binfo = check batchResponse.cloneWithType(BatchInfo);
+                return binfo;
             } else {
-                xml|Error batchResponse = checkXmlPayloadAndSetErrors(response);
-                if (batchResponse is xml) {
-                    BatchInfo binfo = check createBatchRecordFromXml(batchResponse);
-                    return binfo;
-                } else {
-                    return batchResponse;
-                }
+                xml batchResponse = check checkXmlPayloadAndSetErrors(response);
+                BatchInfo binfo = check createBatchRecordFromXml(batchResponse);
+                return binfo;
             }
         } else {
             return headerMap;
