@@ -6,7 +6,7 @@
 
 #conf file
 ballerina.conf
-Config.toml
+tests/Config.toml
 
 #lock file
 Ballerina.lock
@@ -46,3 +46,7 @@ accessToken.bal
 temp.bal.ballerina/
 target/
 .DS_Store
+resources
+
+# Config file
+/tests/Config.toml

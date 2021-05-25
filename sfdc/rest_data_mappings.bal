@@ -1,4 +1,3 @@
-//
 // Copyright (c) 2019, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
 //
 // WSO2 Inc. licenses this file to you under the Apache License,
@@ -14,7 +13,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+
 import ballerina/log;
 
 isolated function toVersions(json payload) returns Version[]|Error {
@@ -28,7 +27,7 @@ isolated function toVersions(json payload) returns Version[]|Error {
             versions[versions.length()] = ver;
         } else {
             string errMsg = "Error occurred while constructing Version record.";
-            log:printError(errMsg + " ele:" + ele.toJsonString(), err = ver);
+            log:printError(errMsg + " ele:" + ele.toJsonString(), 'error = ver);
             return error Error(errMsg, ver);
         }
     }
@@ -44,7 +43,7 @@ isolated function toMapOfStrings(json payload) returns map<string>|Error {
         return strMap;
     } else {
         string errMsg = "Error occurred while constructing map<string>.";
-        log:printError(errMsg + " payload:" + payload.toJsonString(), err = strMap);
+        log:printError(errMsg + " payload:" + payload.toJsonString(), 'error = strMap);
         return error Error(errMsg, strMap);
     }
 }
@@ -57,7 +56,7 @@ isolated function toMapOfLimits(json payload) returns map<Limit>|Error {
 
     if (payloadMap is error) {
         string errMsg = "Error occurred while constructing map<json> using json payload.";
-        log:printError(errMsg + " payload:" + payload.toJsonString(), err = payloadMap);
+        log:printError(errMsg + " payload:" + payload.toJsonString(), 'error = payloadMap);
         return error Error(errMsg, payloadMap);
     } else {
         foreach var [key, value] in payloadMap.entries() {
@@ -66,7 +65,7 @@ isolated function toMapOfLimits(json payload) returns map<Limit>|Error {
                 limits[key] = lim;
             } else {
                 string errMsg = "Error occurred while constructing Limit record.";
-                log:printError(errMsg + " value:" + value.toJsonString(), err = lim);
+                log:printError(errMsg + " value:" + value.toJsonString(), 'error = lim);
                 return error Error(errMsg, lim);
             }
         }
@@ -81,7 +80,7 @@ isolated function toSoqlResult(json payload) returns SoqlResult|Error {
         return res;
     } else {
         string errMsg = "Error occurred while constructing SoqlResult record.";
-        log:printError(errMsg + " payload:" + payload.toJsonString(), err = res);
+        log:printError(errMsg + " payload:" + payload.toJsonString(), 'error = res);
         return error Error(errMsg, res);
     }
 }
@@ -93,7 +92,7 @@ isolated function toSoslResult(json payload) returns SoslResult|Error {
         return res;
     } else {
         string errMsg = "Error occurred while constructing SoslResult record.";
-        log:printError(errMsg + " payload:" + payload.toJsonString(), err = res);
+        log:printError(errMsg + " payload:" + payload.toJsonString(), 'error = res);
         return error Error(errMsg, res);
     }
 }
@@ -105,7 +104,7 @@ isolated function toSObjectMetaData(json payload) returns SObjectMetaData|Error 
         return res;
     } else {
         string errMsg = "Error occurred while constructing SObjectMetaData record.";
-        log:printError(errMsg + " payload:" + payload.toJsonString(), err = res);
+        log:printError(errMsg + " payload:" + payload.toJsonString(), 'error = res);
         return error Error(errMsg, res);
     }
 }
@@ -117,7 +116,7 @@ isolated function toOrgMetadata(json payload) returns OrgMetadata|Error {
         return res;
     } else {
         string errMsg = "Error occurred while constructing OrgMetadata record.";
-        log:printError(errMsg + " payload:" + payload.toJsonString(), err = res);
+        log:printError(errMsg + " payload:" + payload.toJsonString(), 'error = res);
         return error Error(errMsg, res);
     }
 }
@@ -129,7 +128,7 @@ isolated function toSObjectBasicInfo(json payload) returns SObjectBasicInfo|Erro
         return res;
     } else {
         string errMsg = "Error occurred while constructing SObjectBasicInfo record.";
-        log:printError(errMsg + " payload:" + payload.toJsonString(), err = res);
+        log:printError(errMsg + " payload:" + payload.toJsonString(), 'error = res);
         return error Error(errMsg, res);
     }
 }

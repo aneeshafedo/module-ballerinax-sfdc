@@ -13,21 +13,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-import ballerina/test;
+
 import ballerina/log;
 import ballerina/os;
+import ballerina/test;
 
 // Create Salesforce client configuration by reading from environemnt.
+configurable string & readonly clientId = os:getEnv("CLIENT_ID");
+configurable string & readonly clientSecret = os:getEnv("CLIENT_SECRET");
+configurable string & readonly refreshToken = os:getEnv("REFRESH_TOKEN");
+configurable string & readonly refreshUrl = os:getEnv("REFRESH_URL");
+configurable string & readonly baseUrl = os:getEnv("EP_URL");
 
 // Using direct-token config for client configuration
 SalesforceConfiguration sfConfig = {
-    baseUrl: os:getEnv("EP_URL"),
+    baseUrl: baseUrl,
     clientConfig: {
-        clientId: os:getEnv("CLIENT_ID"),
-        clientSecret: os:getEnv("CLIENT_SECRET"),
-        refreshToken: os:getEnv("REFRESH_TOKEN"),
-        refreshUrl: os:getEnv("REFRESH_URL")
+        clientId: clientId,
+        clientSecret: clientSecret,
+        refreshToken: refreshToken,
+        refreshUrl: refreshUrl
     }
 };
 
@@ -40,9 +45,11 @@ json accountRecord = {
 
 string testRecordId = "";
 
-@test:Config {}
+@test:Config { 
+    enable: true
+}
 function testCreateRecord() {
-    log:print("baseClient -> createRecord()");
+    log:printInfo("baseClient -> createRecord()");
     string|Error stringResponse = baseClient->createRecord(ACCOUNT, accountRecord);
 
     if (stringResponse is string) {
@@ -53,10 +60,13 @@ function testCreateRecord() {
     }
 }
 
-@test:Config {dependsOn: [testCreateRecord]}
+@test:Config {
+    enable: true,
+    dependsOn: [testCreateRecord]
+}
 function testGetRecord() {
     json|Error response;
-    log:print("baseClient -> getRecord()");
+    log:printInfo("baseClient -> getRecord()");
     string path = "/services/data/v48.0/sobjects/Account/" + testRecordId;
     response = baseClient->getRecord(path);
 
@@ -69,9 +79,12 @@ function testGetRecord() {
     }
 }
 
-@test:Config {dependsOn: [testCreateRecord, testGetRecord]}
+@test:Config {
+    enable: true,
+    dependsOn: [testCreateRecord, testGetRecord]
+}
 function testUpdateRecord() {
-    log:print("baseClient -> updateRecord()");
+    log:printInfo("baseClient -> updateRecord()");
     json account = {
         Name: "WSO2 Inc",
         BillingCity: "Jaffna",
@@ -86,9 +99,12 @@ function testUpdateRecord() {
     }
 }
 
-@test:Config {dependsOn: [testSearchSOSLString]}
+@test:Config {
+    enable: true,
+    dependsOn: [testSearchSOSLString]
+}
 function testDeleteRecord() {
-    log:print("baseClient -> deleteRecord()");
+    log:printInfo("baseClient -> deleteRecord()");
     boolean|Error response = baseClient->deleteRecord(ACCOUNT, testRecordId);
 
     if (response is boolean) {
@@ -98,9 +114,11 @@ function testDeleteRecord() {
     }
 }
 
-@test:Config {}
+@test:Config { 
+    enable: true
+}
 function testGetQueryResult() {
-    log:print("baseClient -> getQueryResult()");
+    log:printInfo("baseClient -> getQueryResult()");
     string sampleQuery = "SELECT name FROM Account";
     SoqlResult|Error res = baseClient->getQueryResult(sampleQuery);
 
@@ -109,7 +127,7 @@ function testGetQueryResult() {
         string|error nextRecordsUrl = res["nextRecordsUrl"].toString();
 
         while (nextRecordsUrl is string && nextRecordsUrl.trim() != EMPTY_STRING) {
-            log:print("Found new query result set! nextRecordsUrl:" + nextRecordsUrl);
+            log:printInfo("Found new query result set! nextRecordsUrl:" + nextRecordsUrl);
             SoqlResult|Error resp = baseClient->getNextQueryResult(<@untainted>nextRecordsUrl);
 
             if (resp is SoqlResult) {
@@ -124,9 +142,12 @@ function testGetQueryResult() {
     }
 }
 
-@test:Config {dependsOn: [testUpdateRecord]}
+@test:Config {
+    enable: true,
+    dependsOn: [testUpdateRecord]
+}
 function testSearchSOSLString() {
-    log:print("baseClient -> searchSOSLString()");
+    log:printInfo("baseClient -> searchSOSLString()");
     string searchString = "FIND {WSO2 Inc}";
     SoslResult|Error res = baseClient->searchSOSLString(searchString);
 
@@ -149,9 +170,11 @@ isolated function assertSoqlResult(SoqlResult|Error res) {
     }
 }
 
-@test:Config {}
+@test:Config { 
+    enable: true
+}
 function testGetAvailableApiVersions() {
-    log:print("baseClient -> getAvailableApiVersions()");
+    log:printInfo("baseClient -> getAvailableApiVersions()");
     Version[]|Error versions = baseClient->getAvailableApiVersions();
 
     if (versions is Version[]) {
@@ -161,9 +184,11 @@ function testGetAvailableApiVersions() {
     }
 }
 
-@test:Config {}
+@test:Config { 
+    enable: true
+}
 function testGetResourcesByApiVersion() {
-    log:print("baseClient -> getResourcesByApiVersion()");
+    log:printInfo("baseClient -> getResourcesByApiVersion()");
     map<string>|Error resources = baseClient->getResourcesByApiVersion(API_VERSION);
 
     if (resources is map<string>) {
@@ -173,7 +198,7 @@ function testGetResourcesByApiVersion() {
         test:assertTrue((resources["search"].toString().trim()).length() > 0, msg = "Found null for resource search");
         test:assertTrue((resources["query"].toString().trim()).length() > 0, msg = "Found null for resource query");
         test:assertTrue((resources["licensing"].toString().trim()).length() > 0, 
-        msg = "Found null for resource licensing");
+            msg = "Found null for resource licensing");
         test:assertTrue((resources["connect"].toString().trim()).length() > 0, msg = "Found null for resource connect");
         test:assertTrue((resources["tooling"].toString().trim()).length() > 0, msg = "Found null for resource tooling");
         test:assertTrue((resources["chatter"].toString().trim()).length() > 0, msg = "Found null for resource chatter");
@@ -183,9 +208,11 @@ function testGetResourcesByApiVersion() {
     }
 }
 
-@test:Config {}
+@test:Config { 
+    enable: true
+}
 function testGetOrganizationLimits() {
-    log:print("baseClient -> getOrganizationLimits()");
+    log:printInfo("baseClient -> getOrganizationLimits()");
     map<Limit>|Error limits = baseClient->getOrganizationLimits();
 
     if (limits is map<Limit>) {
@@ -203,5 +230,19 @@ function testGetOrganizationLimits() {
         }
     } else {
         test:assertFail(msg = limits.message());
+    }
+}
+
+@test:Config { 
+    enable:true 
+}
+function testdescribeSobject() {
+    log:printInfo("baseClient -> describeAvailableObjects()");
+    OrgMetadata|Error description = baseClient->describeAvailableObjects();
+
+    if (description is OrgMetadata) {
+        test:assertTrue(description.length() > 0, msg = "Found empty descriptions");
+    } else {
+        test:assertFail(msg = description.message());
     }
 }
